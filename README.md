@@ -4,7 +4,7 @@
 
 `external-learning` 是 OpenClaw 的外部信息采集 Skill。**纯程序化**，不调用 LLM。
 
-流程：抓取 → 规则评分 → 写 JSONL → orchestrator 心跳筛选 ≥8 分 → 推送给主人挑选深读 → bridge → X-Memory。
+流程：抓取 → 规则评分 → 写 JSONL → orchestrator 心跳筛选 ≥8 分 → 推送给小一深读 → bridge → X-Memory。
 
 深读和 judge 由主 Agent 直接做，不经过 MiniMax/GPT54 接力。
 
@@ -17,7 +17,7 @@ gather.py 程序化抓取 → 规则评分 → JSONL 候选清单
       ↓
 evolution_orchestrator 心跳读取 → ≥8 分筛选
       ↓
-推送给主人 → 主 Agent 挑选 3-5 条深读 → 写笔记
+推送给小一 → 小一深读前 3 条 → web_fetch 抓原文 → 写笔记进 X-Memory
       ↓
 proposal_bridge → X-Memory → self-evolution
 ```
