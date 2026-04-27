@@ -1,0 +1,187 @@
+{
+  "sources": [
+    {
+      "id": "arxiv-deepxiv",
+      "name": "arXiv via DeepXiv",
+      "priority": 1,
+      "interval_hours": 12,
+      "type": "deepxiv",
+      "queries": [
+        "AI agent",
+        "LLM memory",
+        "autonomous agent",
+        "world model"
+      ],
+      "size_per_query": 10,
+      "date_from_days": 7
+    },
+    {
+      "id": "deepmind",
+      "name": "Google DeepMind",
+      "priority": 2,
+      "interval_hours": 24,
+      "type": "rss",
+      "url": "https://blog.google/atom/research/"
+    },
+    {
+      "id": "meta-ai",
+      "name": "Meta AI Research",
+      "priority": 2,
+      "interval_hours": 24,
+      "type": "rss",
+      "url": "https://ai.meta.com/blog/rss/large-language-model/"
+    },
+    {
+      "id": "hackernews",
+      "name": "Hacker News",
+      "priority": 1,
+      "interval_hours": 12,
+      "type": "rss",
+      "url": "https://hnrss.org/frontpage"
+    },
+    {
+      "id": "github-trending",
+      "name": "GitHub Trending (AI)",
+      "priority": 1,
+      "interval_hours": 12,
+      "type": "fetch",
+      "url": "https://github.com/trending?since=daily"
+    },
+    {
+      "id": "the-register",
+      "name": "The Register",
+      "priority": 2,
+      "interval_hours": 24,
+      "type": "rss",
+      "url": "https://www.theregister.com/headlines.xml"
+    },
+    {
+      "id": "ieee-spectrum",
+      "name": "IEEE Spectrum",
+      "priority": 2,
+      "interval_hours": 48,
+      "type": "rss",
+      "url": "https://spectrum.ieee.org/feeds/topic/robotics.rss"
+    },
+    {
+      "id": "stat-news",
+      "name": "STAT News",
+      "priority": 3,
+      "interval_hours": 48,
+      "type": "rss",
+      "url": "https://www.statnews.com/feed/"
+    },
+    {
+      "id": "nature-news",
+      "name": "Nature News",
+      "priority": 3,
+      "interval_hours": 48,
+      "type": "rss",
+      "url": "https://www.nature.com/nature.rss"
+    },
+    {
+      "id": "bloomberg-tech",
+      "name": "Bloomberg Technology",
+      "priority": 1,
+      "interval_hours": 12,
+      "type": "rss",
+      "url": "https://feeds.bloomberg.com/technology/news.rss"
+    },
+    {
+      "id": "latepost",
+      "name": "晚点 LatePost",
+      "priority": 1,
+      "interval_hours": 12,
+      "type": "rss",
+      "url": "https://rss.latepost.com/"
+    },
+    {
+      "id": "spacenews",
+      "name": "SpaceNews",
+      "priority": 3,
+      "interval_hours": 72,
+      "type": "rss",
+      "url": "https://spacenews.com/feed/"
+    },
+    {
+      "id": "canary-media",
+      "name": "Canary Media",
+      "priority": 3,
+      "interval_hours": 72,
+      "type": "rss",
+      "url": "https://www.canarymedia.com/rss.xml"
+    },
+    {
+      "id": "electrek",
+      "name": "Electrek",
+      "priority": 3,
+      "interval_hours": 72,
+      "type": "rss",
+      "url": "https://electrek.co/guides/electrek-rss-feed/"
+    },
+    {
+      "id": "ars-technica",
+      "name": "Ars Technica",
+      "priority": 2,
+      "interval_hours": 24,
+      "type": "rss",
+      "url": "https://arstechnica.com/feed/"
+    },
+    {
+      "id": "hf-blog",
+      "name": "Hugging Face Blog",
+      "priority": 2,
+      "interval_hours": 24,
+      "type": "rss",
+      "url": "https://huggingface.co/blog/feed.xml"
+    },
+    {
+      "id": "lillog",
+      "name": "Lil'Log",
+      "priority": 2,
+      "interval_hours": 72,
+      "type": "fetch",
+      "url": "https://lilianweng.github.io/"
+    },
+    {
+      "id": "simonw",
+      "name": "Simon Willison",
+      "priority": 2,
+      "interval_hours": 48,
+      "type": "fetch",
+      "url": "https://simonwillison.net/atom/everything/"
+    },
+    {
+      "id": "strat-techi",
+      "name": "Stratechery",
+      "priority": 2,
+      "interval_hours": 48,
+      "type": "rss",
+      "url": "https://stratechery.com/feed/"
+    },
+    {
+      "id": "first-round",
+      "name": "First Round Review",
+      "priority": 3,
+      "interval_hours": 72,
+      "type": "rss",
+      "url": "https://review.firstround.com/rss/"
+    },
+    {
+      "id": "mit-csail",
+      "name": "MIT CSAIL",
+      "priority": 2,
+      "interval_hours": 72,
+      "type": "rss",
+      "url": "https://www.csail.mit.edu/rss/news"
+    },
+    {
+      "id": "stanford-hai",
+      "name": "Stanford HAI",
+      "priority": 2,
+      "interval_hours": 72,
+      "type": "rss",
+      "url": "https://hai.stanford.edu/news/rss.xml"
+    }
+  ]
+}
