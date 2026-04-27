@@ -1,9 +1,8 @@
-"""Canonical gather entry for external-learning.
+"""External learning gather entry — 纯程序化采集，无 LLM。
 
-New architecture only:
-- gather sources programmatically
-- write candidate markdown
-- expose merged candidates for MiniMax reading and GPT54 judgment
+流程：抓取 → 评分(规则) → 写 JSONL → orchestrator 心跳桥接
+
+不调用 MiniMax/GPT54。深读和 judge 由主 Agent 直接做。
 """
 
 from __future__ import annotations
@@ -18,7 +17,11 @@ try:
 except ImportError:
     from gather_programmatic import fetch_deepxiv, fetch_rss, fetch_web, write_candidates_markdown
 
-WORKSPACE_ROOT = Path("/root/.openclaw/workspace")
+try:
+    from runtime_config import WORKSPACE as WORKSPACE_ROOT
+except ImportError:
+    WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+
 SKILL_ROOT = Path(__file__).parent.parent
 CONFIG_PATH = SKILL_ROOT / "modules" / "sources" / "source_config.json"
 LEARNING_DIR = WORKSPACE_ROOT / "memory" / "learning"
@@ -36,7 +39,6 @@ def load_heartbeat_state() -> dict:
         with open(HEARTBEAT_STATE, "r", encoding="utf-8") as f:
             return json.load(f)
     return {"lastChecks": {}}
-
 
 
 def load_seen_urls() -> set[str]:
@@ -77,6 +79,7 @@ def mark_seen(items: list[dict[str, Any]], seen_urls: set[str]) -> set[str]:
     save_seen_urls(seen_urls)
     return seen_urls
 
+
 def should_update_source(source_id: str, interval_hours: int) -> bool:
     state = load_heartbeat_state()
     last_check_str = state.get("lastChecks", {}).get(source_id)
@@ -114,27 +117,6 @@ def merge_all_candidates(date_str: str | None = None) -> list[dict[str, Any]]:
             if isinstance(item, dict):
                 all_candidates.append(item)
 
-    # Older candidate markdown files are display-only. Keep a minimal reader so
-    # existing same-day files remain usable, but new writes use JSONL above.
-    for filepath in LEARNING_DIR.glob(f"candidates-*-{date_str}.md"):
-        lines = filepath.read_text(encoding="utf-8").strip().split("\n")
-        if len(lines) < 4:
-            continue
-        for line in lines[2:]:
-            if line.startswith("|") and not line.startswith("| #"):
-                parts = [p.strip() for p in line.split("|")[1:-1]]
-                if len(parts) >= 6:
-                    try:
-                        all_candidates.append({
-                            "title": parts[1],
-                            "url": parts[2],
-                            "score": float(parts[3]),
-                            "reason": parts[4],
-                            "published": parts[5],
-                        })
-                    except Exception:
-                        continue
-
     seen = set()
     deduped = []
     for candidate in all_candidates:
@@ -145,44 +127,6 @@ def merge_all_candidates(date_str: str | None = None) -> list[dict[str, Any]]:
 
     deduped.sort(key=lambda x: x.get("score", 0), reverse=True)
     return deduped
-
-
-def generate_evolution_proposals(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    proposals = []
-    for item in items:
-        score = item.get("score", 0)
-        if score >= 8.5:
-            priority = "P0" if score >= 9.5 else "P1"
-            proposals.append({
-                "id": f"prop_{datetime.now().strftime('%Y%m%d')}_{hash(item.get('url', '')) % (10**6):06d}",
-                "source_url": item.get("url"),
-                "type": "RESEARCH_PAPER" if "arxiv" in item.get("url", "") else "ENGINEERING_INSIGHT",
-                "priority": priority,
-                "summary": item.get("reason", "")[:200],
-                "target_module": "external-learning",
-                "change_description": item.get("reason", "")[:200],
-                "created_at": datetime.now().isoformat(),
-                "status": "pending_review",
-            })
-    return proposals
-
-
-def push_to_evolution(proposals: list[dict[str, Any]]):
-    if not proposals:
-        print("ℹ️ 本次扫描未发现新的高价值进化提案。")
-        return
-
-    try:
-        from proposal_bridge import process_learning_items
-        result = process_learning_items(proposals)
-        print(
-            f"🚀 proposal_bridge 处理完成: evidence={result.get('evidence_recorded', 0)}, "
-            f"proposals={result.get('proposals_created', 0)}, "
-            f"attached={result.get('evidence_attached', 0)}, "
-            f"orchestrator={'triggered' if result.get('orchestrator_triggered') else 'no'}"
-        )
-    except Exception as exc:
-        print(f"⚠️ proposal_bridge 失败: {exc}")
 
 
 def _fetch_source(source: dict[str, Any]) -> list[dict[str, Any]]:
@@ -197,7 +141,7 @@ def _fetch_source(source: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def gather(force_all: bool = False, only_new: bool = True) -> dict[str, list[dict[str, Any]]]:
-    print("🧠 启动 external-learning 统一扫描流程...")
+    print("🧠 启动 external-learning 程序化采集...")
     date_str = datetime.now().strftime("%Y-%m-%d")
     results: dict[str, list[dict[str, Any]]] = {}
     all_items: list[dict[str, Any]] = []
@@ -220,27 +164,31 @@ def gather(force_all: bool = False, only_new: bool = True) -> dict[str, list[dic
     if only_new:
         print(f"📡 采集完成：抓取 {fetched_count} 条，新增 {len(all_items)} 条。")
     else:
-        print(f"📡 采集完成：共获取 {len(all_items)} 条技术情报。")
-    proposals = generate_evolution_proposals(all_items)
-    push_to_evolution(proposals)
+        print(f"📡 采集完成：共获取 {len(all_items)} 条。")
+
+    # 高评分候选摘要（供主 Agent 深读挑选）
+    high_score = [c for c in all_items if c.get("score", 0) >= 8.0]
+    if high_score:
+        high_score.sort(key=lambda x: x.get("score", 0), reverse=True)
+        print(f"\n🎯 高评分候选（≥8 分）共 {len(high_score)} 条：")
+        for i, c in enumerate(high_score[:10], 1):
+            print(f"  {i}. [{c.get('score', 0):.1f}] {c.get('title', '?')[:80]}")
+            print(f"     {c.get('url', '')}")
+
     return results
-
-
-def run_pipeline(force_all: bool = False, only_new: bool = True):
-    return gather(force_all=force_all, only_new=only_new)
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="External Learning Gather Module")
-    parser.add_argument("--force", action="store_true", help="Force fetch all sources")
-    parser.add_argument("--list", action="store_true", help="List pending sources")
-    parser.add_argument("--all", action="store_true", help="Process already-seen URLs too")
+    parser = argparse.ArgumentParser(description="External Learning — 纯程序化采集")
+    parser.add_argument("--force", action="store_true", help="忽略间隔限制，全量抓取")
+    parser.add_argument("--list", action="store_true", help="列出待采集信息源")
+    parser.add_argument("--all", action="store_true", help="包含已见过的 URL")
     args = parser.parse_args()
 
     if args.list:
         for source in get_pending_sources(force_all=args.force):
             print(f"- {source['id']} ({source.get('type', 'unknown')})")
     else:
-        run_pipeline(force_all=args.force, only_new=not args.all)
+        gather(force_all=args.force, only_new=not args.all)
